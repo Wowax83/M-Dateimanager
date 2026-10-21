@@ -1,0 +1,77 @@
+<resources>
+    <string name="app_name">M-Dateimanager</string>
+    <string name="search_hint">App suchen…</string>
+    <string name="show_system">System-Apps</string>
+    <string name="extracting">Extrahiere…</string>
+    <string name="saved">Gespeichert</string>
+    <string name="share">Teilen</string>
+    <string name="ok">OK</string>
+    <string name="error">Fehler</string>
+    <string name="empty_list">Keine Apps gefunden</string>
+
+    <!-- Datei-Explorer -->
+    <string name="file_browser">Dateien</string>
+    <string name="storage_internal">Interner Speicher</string>
+    <string name="storage_sd">SD-Karte</string>
+    <string name="parent_dir">..</string>
+    <string name="empty_folder">Ordner ist leer</string>
+    <string name="install">Installieren</string>
+    <string name="open">Öffnen</string>
+    <string name="delete">Löschen</string>
+    <string name="rename">Umbenennen</string>
+    <string name="details">Details</string>
+    <string name="delete_confirm">„%1$s“ wirklich löschen?</string>
+    <string name="installing">Installation wird gestartet…</string>
+    <string name="install_failed">Installation fehlgeschlagen</string>
+    <string name="install_success">Installation abgeschlossen</string>
+    <string name="need_unknown_sources">Bitte erlaube die Installation unbekannter Apps für diese App.</string>
+    <string name="need_all_files">Für den Dateizugriff wird „Alle Dateien“-Zugriff benötigt.</string>
+
+    <!-- Auswahl-Aktionen -->
+    <string name="copy">Kopieren</string>
+    <string name="move">Verschieben</string>
+    <string name="extract">Entpacken</string>
+    <string name="more">Mehr</string>
+    <string name="select_all">Alle auswählen</string>
+    <string name="deselect_all">Auswahl aufheben</string>
+    <string name="selected_count">%1$d ausgewählt</string>
+    <string name="copy_success">Kopiert</string>
+    <string name="move_success">Verschoben</string>
+    <string name="extract_success">Entpackt nach:</string>
+    <string name="pick_dest">Zielordner wählen</string>
+    <string name="here">Hier auswählen</string>
+    <string name="up_one">.. (übergeordnet)</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Was möchtest du tun?</string>
+    <string name="card_extractor_title">APK Extraktor</string>
+    <string name="card_extractor_desc">Installierte Apps anzeigen &amp; APKs extrahieren</string>
+    <string name="card_files_title">Datei-Explorer</string>
+    <string name="card_files_desc">Dateien durchsuchen, verwalten &amp; installieren</string>
+    <string name="storage_title">Speicher</string>
+    <string name="sections_title">Bereiche</string>
+
+    <!-- Netzwerk -->
+    <string name="network">Netzwerk</string>
+    <string name="card_network_title">Netzwerk</string>
+    <string name="card_network_desc">SMB-Freigaben durchsuchen &amp; verwalten</string>
+    <string name="new_server">Neuer Speicher</string>
+    <string name="server_name">Name</string>
+    <string name="server_host">Server (IP)</string>
+    <string name="server_share">Freigabe (optional)</string>
+    <string name="server_username">Benutzer</string>
+    <string name="server_password">Passwort</string>
+    <string name="server_domain">Domäne (optional)</string>
+    <string name="save">Speichern</string>
+    <string name="edit">Bearbeiten</string>
+    <string name="connecting">Verbinde…</string>
+    <string name="download">Herunterladen</string>
+    <string name="smb_error">SMB-Fehler</string>
+    <string name="empty_servers">Noch keine Speicher hinzugefügt</string>
+    <string name="parent_dir_short">..</string>
+    <string name="new_folder">Neuer Ordner</string>
+    <string name="smb_back">Zurück</string>
+    <string name="move_here">Hierhin verschieben</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="move_hint">Zielordner wählen – dann „Hierhin verschieben"</string>
+</resources>

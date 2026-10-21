@@ -1,0 +1,28 @@
+# Gradle
+.gradle/
+build/
+app/build/
+**/build/
+
+# Local configuration (machine-specific, do NOT commit)
+local.properties
+
+# Signing keys & secrets — NEVER commit
+*.keystore
+*.jks
+*.p12
+*.key
+apk-extractor.keystore
+
+# Build outputs
+*.apk
+*.aab
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+*.log

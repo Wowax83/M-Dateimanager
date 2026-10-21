@@ -1,0 +1,49 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.wowax.apkextractor'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.wowax.apkextractor"
+        minSdk 24
+        targetSdk 34
+        versionCode 17
+        versionName "1.16"
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('../apk-extractor.keystore')
+            storePassword 'wowax2026'
+            keyAlias 'apkextractor'
+            keyPassword 'wowax2026'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation('eu.agno3.jcifs:jcifs-ng:2.1.10') {
+        exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
+    }
+    implementation 'org.bouncycastle:bcprov-jdk15to18:1.76'
+    implementation 'org.slf4j:slf4j-android:1.7.36'
+}
