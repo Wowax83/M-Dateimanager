@@ -186,8 +186,12 @@ public class SmbBrowserActivity extends AppCompatActivity {
 
     private void initContext() {
         try {
+            java.util.Properties props = new java.util.Properties();
+            props.setProperty("jcifs.smb.client.connTimeout", "8000");
+            props.setProperty("jcifs.smb.client.soTimeout", "8000");
+            props.setProperty("jcifs.smb.client.responseTimeout", "10000");
             jcifs.config.PropertyConfiguration config =
-                    new jcifs.config.PropertyConfiguration(new java.util.Properties());
+                    new jcifs.config.PropertyConfiguration(props);
             CIFSContext base = new jcifs.context.BaseContext(config);
             NtlmPasswordAuthenticator auth = new NtlmPasswordAuthenticator(
                     domain == null ? "" : domain,
