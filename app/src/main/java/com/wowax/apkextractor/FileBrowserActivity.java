@@ -70,6 +70,7 @@ public class FileBrowserActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_file_browser);
+        InsetsHelper.applySystemBars(this);
 
         recycler = findViewById(R.id.recycler);
         emptyView = findViewById(R.id.empty_view);

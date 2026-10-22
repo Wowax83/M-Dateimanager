@@ -17,6 +17,7 @@ public class DashboardActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
+        InsetsHelper.applySystemBars(this);
 
         findViewById(R.id.card_extractor).setOnClickListener(v ->
                 startActivity(new Intent(this, MainActivity.class)));
