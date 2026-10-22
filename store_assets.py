@@ -23,8 +23,6 @@ def vgrad(w, h, top=TOP, bottom=BOTTOM):
 
 
 def draw_m(draw, cx, cy, scale):
-    """Weisses 'M' (Strichform) zentriert bei (cx,cy), Viewport 108 skaliert."""
-    # Originalpunkte (108er Viewport): M34,80 L34,34 L54,62 L74,34 L74,80
     pts = [(34, 80), (34, 34), (54, 62), (74, 34), (74, 80)]
     xy = [(cx + (x - 54) * scale, cy + (y - 54) * scale) for (x, y) in pts]
     w = int(11 * scale)
@@ -40,7 +38,7 @@ def load_font(size, bold=True):
     return ImageFont.load_default()
 
 
-# ============ 1) App-Icon 512x512 (Vollblut-Kreis) ============
+# ============ 1) App-Icon 512x512 ============
 S = 512
 img = vgrad(S, S)
 mask = Image.new("L", (S, S), 0)
@@ -57,25 +55,34 @@ W, H = 1024, 500
 fg = vgrad(W, H, top=(0x0D, 0x47, 0xA1), bottom=(0x1A, 0x6B, 0xC8))
 d = ImageDraw.Draw(fg)
 
-# Logo-Kreis links (Durchmesser 360, zentriert vertikal)
-R = 180
-logo_cx, logo_cy = 250, H // 2
+# Logo-Kreis links (Durchmesser 300)
+R = 150
+lcx, lcy = 195, H // 2
 logo = vgrad(R * 2, R * 2)
 lmask = Image.new("L", (R * 2, R * 2), 0)
 ImageDraw.Draw(lmask).ellipse([0, 0, R * 2, R * 2], fill=255)
-fg.paste(logo, (logo_cx - R, logo_cy - R), lmask)
+fg.paste(logo, (lcx - R, lcy - R), lmask)
 ld = ImageDraw.Draw(fg)
-draw_m(ld, logo_cx, logo_cy, (2 * R) / 108.0)
+draw_m(ld, lcx, lcy, (2 * R) / 108.0)
 
-# Text
-font_title = load_font(110, bold=True)
-font_sub = load_font(40, bold=False)
-title = "M-Dateimanager"
-sub = "Dateimanager \u00b7 APK-Extraktor \u00b7 Netzwerk (SMB)"
-tx = 470
-d.text((tx, 130), title, fill=WHITE, font=font_title)
-d.text((tx, 285), sub, fill=(0xCD, 0xD8, 0xEA), font=font_sub)
+# Text mit automatischer Breitenanpassung
+tx = 390
+maxw = W - tx - 30
+
+def fit(text, max_size, max_w, bold=True):
+    size = max_size
+    while size > 16:
+        f = load_font(size, bold)
+        if d.textlength(text, font=f) <= max_w:
+            return f, size
+        size -= 2
+    return load_font(16, bold), 16
+
+ft, _ = fit("M-Dateimanager", 100, maxw, True)
+fs, _ = fit("Dateimanager \u00b7 APK-Extraktor \u00b7 Netzwerk", 38, maxw, False)
+d.text((tx, 155), "M-Dateimanager", fill=WHITE, font=ft)
+d.text((tx, 285), "Dateimanager \u00b7 APK-Extraktor \u00b7 Netzwerk",
+       fill=(0xCD, 0xD8, 0xEA), font=fs)
 fg.save(os.path.join(OUT_DIR, "feature-graphic-1024x500.png"))
 print("Feature-Graphic:", os.path.join(OUT_DIR, "feature-graphic-1024x500.png"))
-
 print("FERTIG")
