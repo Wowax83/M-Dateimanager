@@ -13,6 +13,7 @@ local.properties
 *.p12
 *.key
 apk-extractor.keystore
+keystore.properties
 
 # Build outputs
 *.apk

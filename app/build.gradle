@@ -2,24 +2,32 @@ plugins {
     id 'com.android.application'
 }
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace 'com.wowax.apkextractor'
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.wowax.apkextractor"
         minSdk 24
-        targetSdk 34
+        targetSdk 36
         versionCode 18
         versionName "1.17"
     }
 
     signingConfigs {
         release {
-            storeFile file('../apk-extractor.keystore')
-            storePassword 'wowax2026'
-            keyAlias 'apkextractor'
-            keyPassword 'wowax2026'
+            if (keystorePropertiesFile.exists()) {
+                storeFile rootProject.file('apk-extractor.keystore')
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
         }
     }
 
