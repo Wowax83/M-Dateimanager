@@ -73,5 +73,6 @@
     <string name="smb_back">Zurück</string>
     <string name="move_here">Hierhin verschieben</string>
     <string name="cancel">Abbrechen</string>
+    <string name="close">Schließen</string>
     <string name="move_hint">Zielordner wählen – dann „Hierhin verschieben"</string>
 </resources>

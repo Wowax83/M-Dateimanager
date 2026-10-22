@@ -559,22 +559,37 @@ public class SmbBrowserActivity extends AppCompatActivity {
     private void showError(Throwable t) {
         setLoading(false);
         Log.e("SmbBrowser", "SMB-Fehler", t);
-        StringBuilder sb = new StringBuilder();
-        Throwable cur = t;
-        while (cur != null) {
-            sb.append(cur.getClass().getName()).append(": ").append(cur.getMessage()).append("\n");
-            StackTraceElement[] st = cur.getStackTrace();
-            for (int i = 0; i < Math.min(3, st.length); i++) {
-                sb.append("  at ").append(st[i].toString()).append("\n");
-            }
-            cur = cur.getCause();
-            if (cur != null) sb.append("Verursacht durch:\n");
-        }
         new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.smb_error)
-                .setMessage(sb.toString())
-                .setPositiveButton(android.R.string.ok, null)
+                .setMessage(friendlyMessage(t))
+                .setPositiveButton(R.string.close, (d, w) -> d.dismiss())
+                .setCancelable(true)
                 .show();
+    }
+
+    private String friendlyMessage(Throwable t) {
+        // Ursachenkette nach Netzwerkfehlern durchsuchen -> verständlicher Hinweis
+        Throwable cur = t;
+        while (cur != null) {
+            String m = cur.getMessage();
+            if (m != null) {
+                String low = m.toLowerCase();
+                if (low.contains("connect") || low.contains("timed out")
+                        || low.contains("unreachable") || low.contains("no route")
+                        || low.contains("unknownhost") || low.contains("failed to connect")) {
+                    return "Der Server ist nicht erreichbar.\n\nÜberprüfe, ob der Server eingeschaltet ist und ob IP-Adresse, Benutzername und Passwort stimmen.";
+                }
+            }
+            cur = cur.getCause();
+        }
+        // Sonst erste sinnvolle Fehlermeldung
+        cur = t;
+        while (cur != null && (cur.getMessage() == null || cur.getMessage().trim().isEmpty())) {
+            cur = cur.getCause();
+        }
+        String msg = (cur != null && cur.getMessage() != null)
+                ? cur.getMessage() : t.getClass().getSimpleName();
+        return msg.trim();
     }
 
     private String formatSize(long bytes) {
