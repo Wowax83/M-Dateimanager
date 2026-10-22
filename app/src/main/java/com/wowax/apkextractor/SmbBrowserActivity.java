@@ -564,6 +564,12 @@ public class SmbBrowserActivity extends AppCompatActivity {
     private void showError(Throwable t) {
         setLoading(false);
         Log.e("SmbBrowser", "SMB-Fehler", t);
+        if (isUnreachable(t)) {
+            // Server nicht erreichbar -> kurz melden und zurück zur Serverauswahl
+            Toast.makeText(this, R.string.server_unreachable, Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
         new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.smb_error)
                 .setMessage(friendlyMessage(t))
@@ -572,8 +578,7 @@ public class SmbBrowserActivity extends AppCompatActivity {
                 .show();
     }
 
-    private String friendlyMessage(Throwable t) {
-        // Ursachenkette nach Netzwerkfehlern durchsuchen -> verständlicher Hinweis
+    private boolean isUnreachable(Throwable t) {
         Throwable cur = t;
         while (cur != null) {
             String m = cur.getMessage();
@@ -582,13 +587,16 @@ public class SmbBrowserActivity extends AppCompatActivity {
                 if (low.contains("connect") || low.contains("timed out")
                         || low.contains("unreachable") || low.contains("no route")
                         || low.contains("unknownhost") || low.contains("failed to connect")) {
-                    return "Der Server ist nicht erreichbar.\n\nÜberprüfe, ob der Server eingeschaltet ist und ob IP-Adresse, Benutzername und Passwort stimmen.";
+                    return true;
                 }
             }
             cur = cur.getCause();
         }
-        // Sonst erste sinnvolle Fehlermeldung
-        cur = t;
+        return false;
+    }
+
+    private String friendlyMessage(Throwable t) {
+        Throwable cur = t;
         while (cur != null && (cur.getMessage() == null || cur.getMessage().trim().isEmpty())) {
             cur = cur.getCause();
         }
