@@ -7,9 +7,6 @@
         android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
 
-    <!-- APKs installieren -->
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-
     <!-- Netzwerk (SMB) -->
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -70,10 +67,6 @@
             android:name=".SmbBrowserActivity"
             android:exported="false"
             android:label="@string/network" />
-
-        <receiver
-            android:name=".InstallResultReceiver"
-            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

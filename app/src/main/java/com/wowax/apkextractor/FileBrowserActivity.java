@@ -252,7 +252,6 @@ public class FileBrowserActivity extends AppCompatActivity {
     private void onItemClick(FileItem item) {
         if (selectionMode) { toggleSelection(item); return; }
         if (item.isDirectory) loadDir(item.file);
-        else if (item.isApk()) installApk(item.file);
         else openFile(item.file);
     }
 
@@ -441,60 +440,6 @@ public class FileBrowserActivity extends AppCompatActivity {
         if (src.renameTo(target)) return;
         copyRecursive(src, dstDir);
         deleteRecursive(src);
-    }
-
-    private void installApk(File apk) {
-        if (!getPackageManager().canRequestPackageInstalls()) {
-            new MaterialAlertDialogBuilder(this)
-                    .setTitle(R.string.install)
-                    .setMessage(R.string.need_unknown_sources)
-                    .setPositiveButton(R.string.ok, (d, w) -> {
-                        Intent i = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                                Uri.parse("package:" + getPackageName()));
-                        startActivity(i);
-                    })
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .show();
-            return;
-        }
-        List<File> toInstall = collectInstallFiles(apk);
-        new ApkInstaller(this, toInstall, new ApkInstaller.Callback() {
-            @Override public void onStart() {
-                Toast.makeText(FileBrowserActivity.this, R.string.installing, Toast.LENGTH_SHORT).show();
-            }
-            @Override public void onError(String message) {
-                Toast.makeText(FileBrowserActivity.this,
-                        getString(R.string.error) + ": " + message, Toast.LENGTH_LONG).show();
-            }
-        }).start();
-    }
-
-    private List<File> collectInstallFiles(File apk) {
-        File dir = apk.getParentFile();
-        File[] apks = dir.listFiles((d, n) -> n.toLowerCase().endsWith(".apk"));
-        if (apks == null || apks.length <= 1) {
-            return Collections.singletonList(apk);
-        }
-        List<File> bases = new ArrayList<>();
-        List<File> splits = new ArrayList<>();
-        for (File f : apks) {
-            if (f.getName().toLowerCase().startsWith("split_")) splits.add(f);
-            else bases.add(f);
-        }
-        if (splits.isEmpty()) {
-            return Collections.singletonList(apk);
-        }
-        Collections.sort(splits, Comparator.comparing(File::getName));
-
-        List<File> result = new ArrayList<>();
-        boolean tappedIsBase = !apk.getName().toLowerCase().startsWith("split_");
-        if (tappedIsBase && bases.contains(apk)) {
-            bases.remove(apk);
-            result.add(apk);
-        }
-        result.addAll(bases);
-        result.addAll(splits);
-        return result;
     }
 
     private void openFile(File file) {
