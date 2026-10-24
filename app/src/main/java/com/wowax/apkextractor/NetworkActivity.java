@@ -6,8 +6,10 @@ import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -74,6 +76,19 @@ public class NetworkActivity extends AppCompatActivity {
         EditText host = new EditText(this);
         host.setHint(R.string.server_host);
         host.setInputType(InputType.TYPE_CLASS_TEXT);
+
+        Spinner protocol = new Spinner(this);
+        String[] protos = { getString(R.string.protocol_smb),
+                getString(R.string.protocol_ftp), getString(R.string.protocol_sftp) };
+        ArrayAdapter<String> pa = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, protos);
+        pa.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        protocol.setAdapter(pa);
+
+        EditText port = new EditText(this);
+        port.setHint(R.string.port);
+        port.setInputType(InputType.TYPE_CLASS_NUMBER);
+
         EditText share = new EditText(this);
         share.setHint(R.string.server_share);
         EditText username = new EditText(this);
@@ -87,6 +102,10 @@ public class NetworkActivity extends AppCompatActivity {
         if (existing != null) {
             name.setText(existing.name);
             host.setText(existing.host);
+            int pi = "ftp".equals(existing.protocol) ? 1
+                    : "sftp".equals(existing.protocol) ? 2 : 0;
+            protocol.setSelection(pi);
+            port.setText(existing.port > 0 ? String.valueOf(existing.port) : "");
             share.setText(existing.share);
             username.setText(existing.username);
             password.setText(existing.password);
@@ -99,6 +118,8 @@ public class NetworkActivity extends AppCompatActivity {
         layout.setPadding(pad, pad / 2, pad, 0);
         layout.addView(name);
         layout.addView(host);
+        layout.addView(protocol);
+        layout.addView(port);
         layout.addView(share);
         layout.addView(username);
         layout.addView(password);
@@ -111,6 +132,10 @@ public class NetworkActivity extends AppCompatActivity {
                     SmbServer s = existing == null ? new SmbServer() : existing;
                     s.name = name.getText().toString().trim();
                     s.host = host.getText().toString().trim();
+                    int pi = protocol.getSelectedItemPosition();
+                    s.protocol = (pi == 1) ? "ftp" : (pi == 2) ? "sftp" : "smb";
+                    String portStr = port.getText().toString().trim();
+                    s.port = portStr.isEmpty() ? 0 : Integer.parseInt(portStr);
                     s.share = share.getText().toString().trim();
                     s.username = username.getText().toString().trim();
                     s.password = password.getText().toString();
@@ -128,14 +153,24 @@ public class NetworkActivity extends AppCompatActivity {
     }
 
     private void openBrowser(SmbServer s) {
-        Intent i = new Intent(this, SmbBrowserActivity.class);
-        i.putExtra("name", s.name);
-        i.putExtra("host", s.host);
-        i.putExtra("share", s.share);
-        i.putExtra("username", s.username);
-        i.putExtra("password", s.password);
-        i.putExtra("domain", s.domain);
-        startActivity(i);
+        if ("ftp".equals(s.protocol) || "sftp".equals(s.protocol)) {
+            Intent i = new Intent(this, FtpBrowserActivity.class);
+            i.putExtra("protocol", s.protocol);
+            i.putExtra("host", s.host);
+            i.putExtra("port", s.effectivePort());
+            i.putExtra("username", s.username);
+            i.putExtra("password", s.password);
+            startActivity(i);
+        } else {
+            Intent i = new Intent(this, SmbBrowserActivity.class);
+            i.putExtra("name", s.name);
+            i.putExtra("host", s.host);
+            i.putExtra("share", s.share);
+            i.putExtra("username", s.username);
+            i.putExtra("password", s.password);
+            i.putExtra("domain", s.domain);
+            startActivity(i);
+        }
     }
 
     private void showServerActions(SmbServer s) {
@@ -173,7 +208,9 @@ public class NetworkActivity extends AppCompatActivity {
         public void onBindViewHolder(@NonNull VH h, int pos) {
             SmbServer s = data.get(pos);
             h.name.setText(s.name.isEmpty() ? s.host : s.name);
-            String sub = "smb://" + s.host + (s.share.isEmpty() ? "" : "/" + s.share);
+            String scheme = s.protocol.isEmpty() ? "smb" : s.protocol;
+            String sub = scheme + "://" + s.host;
+            if ("smb".equals(scheme) && !s.share.isEmpty()) sub += "/" + s.share;
             h.sub.setText(sub);
             h.itemView.setOnClickListener(v -> openBrowser(s));
             h.itemView.setOnLongClickListener(v -> {

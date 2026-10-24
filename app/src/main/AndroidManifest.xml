@@ -68,6 +68,11 @@
             android:exported="false"
             android:label="@string/network" />
 
+        <activity
+            android:name=".FtpBrowserActivity"
+            android:exported="false"
+            android:label="@string/network" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

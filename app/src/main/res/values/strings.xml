@@ -96,4 +96,12 @@
     <string name="compress_name">Archivname</string>
     <string name="compress_hint">Archiv.zip</string>
     <string name="compress_success">Archiv erstellt:</string>
+
+    <!-- FTP/SFTP -->
+    <string name="protocol">Protokoll</string>
+    <string name="protocol_smb">SMB</string>
+    <string name="protocol_ftp">FTP</string>
+    <string name="protocol_sftp">SFTP</string>
+    <string name="port">Port</string>
+    <string name="ftp_error">Verbindungsfehler</string>
 </resources>

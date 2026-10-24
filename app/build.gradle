@@ -16,8 +16,8 @@ android {
         applicationId "com.wowax.apkextractor"
         minSdk 24
         targetSdk 36
-        versionCode 24
-        versionName "1.23"
+        versionCode 25
+        versionName "1.24"
     }
 
     signingConfigs {
@@ -54,4 +54,12 @@ dependencies {
     }
     implementation 'org.bouncycastle:bcprov-jdk15to18:1.76'
     implementation 'org.slf4j:slf4j-android:1.7.36'
+    // FTP
+    implementation 'commons-net:commons-net:3.11.1'
+    // SFTP (moderner, wartbarer JSch-Fork)
+    implementation('com.github.mwiede:jsch:0.2.24') {
+        exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
+        exclude group: 'org.bouncycastle', module: 'bcutil-jdk18on'
+    }
+    implementation 'org.bouncycastle:bcutil-jdk15to18:1.76'
 }
