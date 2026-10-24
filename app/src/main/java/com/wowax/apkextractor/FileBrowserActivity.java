@@ -355,7 +355,7 @@ public class FileBrowserActivity extends AppCompatActivity {
     private void updateSelectionUi() {
         int n = selected.size();
         boolean one = n == 1;
-        boolean oneZip = one && selected.iterator().next().name.toLowerCase().endsWith(".zip");
+        boolean oneArchive = one && ArchiveExtractor.isSupported(selected.iterator().next().name);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(getString(R.string.selected_count, n));
         }
@@ -366,37 +366,78 @@ public class FileBrowserActivity extends AppCompatActivity {
         btnMove.setEnabled(n > 0);
         btnRename.setEnabled(one);
         btnDelete.setEnabled(n > 0);
-        btnExtract.setEnabled(oneZip);
+        btnExtract.setEnabled(oneArchive);
         btnMore.setEnabled(n > 0);
     }
 
     private void onCopy() {
-        List<FileItem> items = new ArrayList<>(selected);
-        FolderPickerDialog.show(this, currentDir, dest -> runFileOp(() -> {
-            for (FileItem it : items) {
-                if (it.file.isDirectory()
-                        && dest.getAbsolutePath().startsWith(it.file.getAbsolutePath())) {
-                    throw new IOException("Ziel liegt innerhalb der Quelle");
-                }
-                copyRecursive(it.file, dest);
-            }
-            return getString(R.string.copy_success);
-        }));
+        startCopyOrMove(false);
     }
 
     private void onMove() {
+        startCopyOrMove(true);
+    }
+
+    private void startCopyOrMove(boolean move) {
         List<FileItem> items = new ArrayList<>(selected);
-        FolderPickerDialog.show(this, currentDir, dest -> runFileOp(() -> {
+        FolderPickerDialog.show(this, currentDir, dest -> {
             for (FileItem it : items) {
-                if (it.file.getParentFile() != null && it.file.getParentFile().equals(dest)) continue;
                 if (it.file.isDirectory()
                         && dest.getAbsolutePath().startsWith(it.file.getAbsolutePath())) {
-                    throw new IOException("Ziel liegt innerhalb der Quelle");
+                    Toast.makeText(this, "Ziel liegt innerhalb der Quelle", Toast.LENGTH_SHORT).show();
+                    return;
                 }
-                moveRecursive(it.file, dest);
             }
-            return getString(R.string.move_success);
-        }));
+            runBatch(items, dest, move);
+        });
+    }
+
+    private void runBatch(List<FileItem> items, File dest, boolean move) {
+        new Thread(() -> {
+            int total = 0;
+            for (FileItem it : items) total += countFiles(it.file);
+            final int fTotal = Math.max(1, total);
+            mainHandler.post(() -> {
+                ProgressDialog pd = new ProgressDialog(this,
+                        move ? getString(R.string.move) : getString(R.string.copy), fTotal);
+                pd.show();
+                new Thread(() -> {
+                    int[] counter = new int[1];
+                    boolean cancelled = false;
+                    try {
+                        for (FileItem it : items) {
+                            if (pd.isCancelled()) { cancelled = true; break; }
+                            if (move) moveRecursiveProg(it.file, dest, pd, counter);
+                            else copyRecursiveProg(it.file, dest, pd, counter);
+                        }
+                    } catch (Exception e) {
+                        final String m = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+                        mainHandler.post(() -> {
+                            pd.dismiss();
+                            Toast.makeText(this, getString(R.string.error) + ": " + m, Toast.LENGTH_LONG).show();
+                        });
+                        return;
+                    }
+                    final boolean fCancelled = cancelled;
+                    mainHandler.post(() -> {
+                        pd.dismiss();
+                        Toast.makeText(this,
+                                fCancelled ? R.string.cancel : (move ? R.string.move_success : R.string.copy_success),
+                                Toast.LENGTH_SHORT).show();
+                        exitSelectionMode();
+                        loadDir(currentDir);
+                    });
+                }).start();
+            });
+        }).start();
+    }
+
+    private int countFiles(File f) {
+        if (!f.isDirectory()) return 1;
+        File[] c = f.listFiles();
+        int n = 0;
+        if (c != null) for (File x : c) n += countFiles(x);
+        return n;
     }
 
     private void onRename() {
@@ -514,7 +555,11 @@ public class FileBrowserActivity extends AppCompatActivity {
                 .setPositiveButton(R.string.ok, (d, w) -> {
                     String name = input.getText().toString().trim();
                     if (name.isEmpty()) name = getString(R.string.compress_hint);
-                    if (!name.toLowerCase().endsWith(".zip")) name += ".zip";
+                    String lower = name.toLowerCase();
+                    if (!lower.endsWith(".zip") && !lower.endsWith(".tar")
+                            && !lower.endsWith(".tar.gz") && !lower.endsWith(".tgz")) {
+                        name += ".zip";
+                    }
                     File dest = new File(currentDir, name);
                     if (dest.exists()) {
                         Toast.makeText(this, R.string.error, Toast.LENGTH_SHORT).show();
@@ -522,7 +567,7 @@ public class FileBrowserActivity extends AppCompatActivity {
                     }
                     List<File> sources = new ArrayList<>();
                     for (FileItem it : items) sources.add(it.file);
-                    ArchiveCreator.zip(sources, dest, new ArchiveCreator.Callback() {
+                    ArchiveCreator.create(sources, dest, new ArchiveCreator.Callback() {
                         @Override public void onSuccess(String path) {
                             Toast.makeText(FileBrowserActivity.this,
                                     getString(R.string.compress_success) + " " + path,
@@ -681,15 +726,18 @@ public class FileBrowserActivity extends AppCompatActivity {
         }).start();
     }
 
-    private void copyRecursive(File src, File dstDir) throws IOException {
+    private void copyRecursiveProg(File src, File dstDir, ProgressDialog pd, int[] counter) throws IOException {
+        if (pd.isCancelled()) return;
         if (src.isDirectory()) {
             File target = new File(dstDir, src.getName());
             if (target.getAbsolutePath().equals(src.getAbsolutePath())) return;
             target.mkdirs();
             File[] c = src.listFiles();
-            if (c != null) for (File x : c) copyRecursive(x, target);
+            if (c != null) for (File x : c) copyRecursiveProg(x, target, pd, counter);
         } else {
             copyFile(src, new File(dstDir, src.getName()));
+            counter[0]++;
+            pd.update(counter[0], src.getName());
         }
     }
 
@@ -702,11 +750,11 @@ public class FileBrowserActivity extends AppCompatActivity {
         }
     }
 
-    private void moveRecursive(File src, File dstDir) throws IOException {
+    private void moveRecursiveProg(File src, File dstDir, ProgressDialog pd, int[] counter) throws IOException {
         File target = new File(dstDir, src.getName());
         if (src.renameTo(target)) return;
-        copyRecursive(src, dstDir);
-        deleteRecursive(src);
+        copyRecursiveProg(src, dstDir, pd, counter);
+        if (!pd.isCancelled()) deleteRecursive(src);
     }
 
     private void openFile(File file) {

@@ -16,8 +16,8 @@ android {
         applicationId "com.wowax.apkextractor"
         minSdk 24
         targetSdk 36
-        versionCode 26
-        versionName "1.25"
+        versionCode 27
+        versionName "1.26"
     }
 
     signingConfigs {
@@ -62,4 +62,7 @@ dependencies {
         exclude group: 'org.bouncycastle', module: 'bcutil-jdk18on'
     }
     implementation 'org.bouncycastle:bcutil-jdk15to18:1.76'
+    // Weitere Archivformate (tar, gz, 7z)
+    implementation 'org.apache.commons:commons-compress:1.26.2'
+    implementation 'org.tukaani:xz:1.10'
 }
