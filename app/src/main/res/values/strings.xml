@@ -76,4 +76,24 @@
     <string name="close">Schließen</string>
     <string name="server_unreachable">Server nicht erreichbar</string>
     <string name="move_hint">Zielordner wählen – dann „Hierhin verschieben"</string>
+
+    <!-- Schnelle Features -->
+    <string name="search">Suche</string>
+    <string name="search_files_hint">Dateien suchen…</string>
+    <string name="sort">Sortieren</string>
+    <string name="sort_name">Name</string>
+    <string name="sort_size">Größe</string>
+    <string name="sort_date">Datum</string>
+    <string name="sort_type">Typ</string>
+    <string name="sort_asc">Aufsteigend</string>
+    <string name="sort_desc">Absteigend</string>
+    <string name="show_hidden">Versteckte Dateien anzeigen</string>
+    <string name="favorites">Favoriten</string>
+    <string name="add_favorite">Aktuellen Ordner hinzufügen</string>
+    <string name="favorite_added">Zu Favoriten hinzugefügt</string>
+    <string name="no_favorites">Noch keine Favoriten</string>
+    <string name="compress">Komprimieren (ZIP)</string>
+    <string name="compress_name">Archivname</string>
+    <string name="compress_hint">Archiv.zip</string>
+    <string name="compress_success">Archiv erstellt:</string>
 </resources>

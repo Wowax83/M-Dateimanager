@@ -3,6 +3,7 @@ package com.wowax.apkextractor;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -21,6 +22,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.appcompat.widget.SearchView;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -66,11 +68,19 @@ public class FileBrowserActivity extends AppCompatActivity {
     private final Set<FileItem> selected = new LinkedHashSet<>();
     private boolean selectionMode = false;
 
+    private int sortMode = 0; // 0 Name, 1 Größe, 2 Datum, 3 Typ
+    private boolean sortAsc = true;
+    private boolean showHidden = false;
+    private String searchQuery = "";
+    private final List<File> allChildren = new ArrayList<>();
+    private SharedPreferences prefs;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_file_browser);
         InsetsHelper.applySystemBars(this);
+        prefs = getSharedPreferences("file_favorites", MODE_PRIVATE);
 
         recycler = findViewById(R.id.recycler);
         emptyView = findViewById(R.id.empty_view);
@@ -177,13 +187,47 @@ public class FileBrowserActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_file_browser, menu);
+        MenuItem hiddenItem = menu.findItem(R.id.action_hidden);
+        hiddenItem.setChecked(showHidden);
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        SearchView sv = (SearchView) searchItem.getActionView();
+        if (sv != null) {
+            sv.setQueryHint(getString(R.string.search_files_hint));
+            sv.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                @Override public boolean onQueryTextSubmit(String q) {
+                    searchQuery = q == null ? "" : q.trim();
+                    applyFilterAndSort();
+                    return true;
+                }
+                @Override public boolean onQueryTextChange(String q) {
+                    searchQuery = q == null ? "" : q.trim();
+                    applyFilterAndSort();
+                    return true;
+                }
+            });
+        }
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == R.id.action_storage) {
+        int id = item.getItemId();
+        if (id == R.id.action_storage) {
             showStoragePicker();
+            return true;
+        }
+        if (id == R.id.action_sort) {
+            showSortDialog();
+            return true;
+        }
+        if (id == R.id.action_hidden) {
+            showHidden = !showHidden;
+            item.setChecked(showHidden);
+            applyFilterAndSort();
+            return true;
+        }
+        if (id == R.id.action_favorites) {
+            showFavoritesDialog();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -214,23 +258,46 @@ public class FileBrowserActivity extends AppCompatActivity {
                     ? getString(R.string.storage_internal) : dir.getName();
             getSupportActionBar().setTitle(title);
         }
-        files.clear();
+        allChildren.clear();
         File[] children = dir.listFiles();
-        if (children == null) {
-            emptyView.setVisibility(View.VISIBLE);
-            recycler.setVisibility(View.GONE);
-            adapter.notifyDataSetChanged();
-            return;
+        if (children != null) allChildren.addAll(Arrays.asList(children));
+        applyFilterAndSort();
+    }
+
+    private void applyFilterAndSort() {
+        files.clear();
+        List<File> list = new ArrayList<>();
+        for (File f : allChildren) {
+            if (f.isHidden() && !showHidden) continue;
+            if (!searchQuery.isEmpty()
+                    && !f.getName().toLowerCase().contains(searchQuery.toLowerCase())) continue;
+            list.add(f);
         }
-        List<File> list = new ArrayList<>(Arrays.asList(children));
-        Collections.sort(list, (a, b) -> {
-            if (a.isDirectory() != b.isDirectory()) return a.isDirectory() ? -1 : 1;
-            return a.getName().compareToIgnoreCase(b.getName());
-        });
+        sortList(list);
         for (File f : list) files.add(new FileItem(f));
         adapter.notifyDataSetChanged();
         emptyView.setVisibility(files.isEmpty() ? View.VISIBLE : View.GONE);
         recycler.setVisibility(files.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
+    private void sortList(List<File> list) {
+        Comparator<File> cmp;
+        switch (sortMode) {
+            case 1: cmp = Comparator.comparingLong(File::length); break;
+            case 2: cmp = Comparator.comparingLong(File::lastModified); break;
+            case 3: cmp = Comparator.comparing(f -> extension(f.getName())); break;
+            default: cmp = Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER);
+        }
+        list.sort((a, b) -> {
+            if (a.isDirectory() != b.isDirectory()) return a.isDirectory() ? -1 : 1;
+            int c = cmp.compare(a, b);
+            return sortAsc ? c : -c;
+        });
+    }
+
+    private String extension(String name) {
+        int i = name.lastIndexOf('.');
+        return i < 0 ? "" : name.substring(i + 1).toLowerCase(Locale.ROOT);
     }
 
     private void goUpOrFinish() {
@@ -370,25 +437,134 @@ public class FileBrowserActivity extends AppCompatActivity {
         });
     }
 
+    private void showSortDialog() {
+        String[] modes = { getString(R.string.sort_name), getString(R.string.sort_size),
+                getString(R.string.sort_date), getString(R.string.sort_type) };
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.sort)
+                .setSingleChoiceItems(modes, sortMode, (d, which) -> {
+                    sortMode = which;
+                    d.dismiss();
+                    showSortDirectionDialog();
+                })
+                .show();
+    }
+
+    private void showSortDirectionDialog() {
+        String[] dirs = { getString(R.string.sort_asc), getString(R.string.sort_desc) };
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.sort)
+                .setSingleChoiceItems(dirs, sortAsc ? 0 : 1, (d, which) -> {
+                    sortAsc = which == 0;
+                    d.dismiss();
+                    applyFilterAndSort();
+                })
+                .show();
+    }
+
+    private Set<String> getFavorites() {
+        return new LinkedHashSet<>(prefs.getStringSet("favorites", new LinkedHashSet<>()));
+    }
+
+    private void saveFavorites(Set<String> set) {
+        prefs.edit().putStringSet("favorites", set).apply();
+    }
+
+    private void showFavoritesDialog() {
+        final List<String> favList = new ArrayList<>(getFavorites());
+        String[] labels = new String[favList.size() + 1];
+        for (int i = 0; i < favList.size(); i++) {
+            labels[i] = new File(favList.get(i)).getName() + "  (" + favList.get(i) + ")";
+        }
+        labels[favList.size()] = "+ " + getString(R.string.add_favorite);
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.favorites)
+                .setItems(labels, (d, which) -> {
+                    if (which == favList.size()) {
+                        addCurrentToFavorites();
+                    } else {
+                        File f = new File(favList.get(which));
+                        if (f.isDirectory() && f.canRead()) {
+                            currentDir = f;
+                            loadDir(f);
+                        } else {
+                            Toast.makeText(this, R.string.error, Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                })
+                .show();
+    }
+
+    private void addCurrentToFavorites() {
+        Set<String> favs = getFavorites();
+        favs.add(currentDir.getAbsolutePath());
+        saveFavorites(favs);
+        Toast.makeText(this, R.string.favorite_added, Toast.LENGTH_SHORT).show();
+    }
+
+    private void onCompress() {
+        final List<FileItem> items = new ArrayList<>(selected);
+        final EditText input = new EditText(this);
+        input.setHint(R.string.compress_hint);
+        input.setText(getString(R.string.compress_hint));
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.compress)
+                .setView(input)
+                .setPositiveButton(R.string.ok, (d, w) -> {
+                    String name = input.getText().toString().trim();
+                    if (name.isEmpty()) name = getString(R.string.compress_hint);
+                    if (!name.toLowerCase().endsWith(".zip")) name += ".zip";
+                    File dest = new File(currentDir, name);
+                    if (dest.exists()) {
+                        Toast.makeText(this, R.string.error, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    List<File> sources = new ArrayList<>();
+                    for (FileItem it : items) sources.add(it.file);
+                    ArchiveCreator.zip(sources, dest, new ArchiveCreator.Callback() {
+                        @Override public void onSuccess(String path) {
+                            Toast.makeText(FileBrowserActivity.this,
+                                    getString(R.string.compress_success) + " " + path,
+                                    Toast.LENGTH_SHORT).show();
+                            exitSelectionMode();
+                            loadDir(currentDir);
+                        }
+                        @Override public void onError(String message) {
+                            Toast.makeText(FileBrowserActivity.this,
+                                    getString(R.string.error) + ": " + message,
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    });
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
     private void onMore() {
         if (selected.size() == 1) {
             FileItem item = selected.iterator().next();
-            String[] opts = { getString(R.string.share), getString(R.string.details) };
+            String[] opts = { getString(R.string.compress), getString(R.string.share), getString(R.string.details) };
             new MaterialAlertDialogBuilder(this)
                     .setTitle(item.name)
                     .setItems(opts, (d, w) -> {
-                        if (w == 0) share(item.file); else showDetails(item);
+                        if (w == 0) onCompress();
+                        else if (w == 1) share(item.file);
+                        else showDetails(item);
                     })
                     .show();
         } else {
-            String[] opts = { getString(R.string.select_all), getString(R.string.deselect_all) };
+            String[] opts = { getString(R.string.compress), getString(R.string.select_all), getString(R.string.deselect_all) };
             new MaterialAlertDialogBuilder(this)
                     .setTitle(R.string.more)
                     .setItems(opts, (d, w) -> {
-                        if (w == 0) { selected.clear(); selected.addAll(files); }
-                        else { selected.clear(); }
-                        adapter.setSelected(selected);
-                        updateSelectionUi();
+                        if (w == 0) {
+                            onCompress();
+                        } else {
+                            if (w == 1) { selected.clear(); selected.addAll(files); }
+                            else { selected.clear(); }
+                            adapter.setSelected(selected);
+                            updateSelectionUi();
+                        }
                     })
                     .show();
         }
