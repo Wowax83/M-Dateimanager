@@ -11,6 +11,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.text.InputType;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -540,27 +541,116 @@ public class FileBrowserActivity extends AppCompatActivity {
                 .show();
     }
 
+    private void onEncrypt() {
+        final List<FileItem> items = new ArrayList<>(selected);
+        final EditText input = new EditText(this);
+        input.setHint(R.string.password);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.encrypt)
+                .setView(input)
+                .setPositiveButton(R.string.ok, (d, w) -> {
+                    final String pw = input.getText().toString();
+                    if (pw.isEmpty()) {
+                        Toast.makeText(this, R.string.password_required, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    new Thread(() -> {
+                        int ok = 0;
+                        int fail = 0;
+                        for (FileItem it : items) {
+                            if (it.isDirectory) continue;
+                            try {
+                                FileCrypto.encrypt(it.file, pw);
+                                ok++;
+                            } catch (Exception e) {
+                                fail++;
+                            }
+                        }
+                        final int fok = ok;
+                        final int ffail = fail;
+                        mainHandler.post(() -> {
+                            Toast.makeText(this, getString(R.string.encrypt_success) + " " + fok
+                                    + (ffail > 0 ? " (" + ffail + " übersprungen)" : ""),
+                                    Toast.LENGTH_LONG).show();
+                            exitSelectionMode();
+                            loadDir(currentDir);
+                        });
+                    }).start();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void onDecrypt() {
+        if (selected.size() != 1) return;
+        final FileItem item = selected.iterator().next();
+        final EditText input = new EditText(this);
+        input.setHint(R.string.password);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.decrypt)
+                .setView(input)
+                .setPositiveButton(R.string.ok, (d, w) -> {
+                    final String pw = input.getText().toString();
+                    if (pw.isEmpty()) {
+                        Toast.makeText(this, R.string.password_required, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    new Thread(() -> {
+                        try {
+                            FileCrypto.decrypt(item.file, pw);
+                            mainHandler.post(() -> {
+                                Toast.makeText(this, R.string.decrypt_success, Toast.LENGTH_SHORT).show();
+                                exitSelectionMode();
+                                loadDir(currentDir);
+                            });
+                        } catch (Exception e) {
+                            mainHandler.post(() -> Toast.makeText(this,
+                                    R.string.decrypt_failed, Toast.LENGTH_LONG).show());
+                        }
+                    }).start();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
     private void onMore() {
         if (selected.size() == 1) {
-            FileItem item = selected.iterator().next();
-            String[] opts = { getString(R.string.compress), getString(R.string.share), getString(R.string.details) };
+            final FileItem item = selected.iterator().next();
+            List<String> labels = new ArrayList<>();
+            List<Runnable> actions = new ArrayList<>();
+            if (item.isDirectory) {
+                labels.add(getString(R.string.compress));
+                actions.add(this::onCompress);
+            } else if (FileCrypto.isEncrypted(item.name)) {
+                labels.add(getString(R.string.decrypt));
+                actions.add(this::onDecrypt);
+            } else {
+                labels.add(getString(R.string.encrypt));
+                actions.add(this::onEncrypt);
+                labels.add(getString(R.string.compress));
+                actions.add(this::onCompress);
+            }
+            labels.add(getString(R.string.share));
+            actions.add(() -> share(item.file));
+            labels.add(getString(R.string.details));
+            actions.add(() -> showDetails(item));
+            final List<Runnable> fActions = actions;
             new MaterialAlertDialogBuilder(this)
                     .setTitle(item.name)
-                    .setItems(opts, (d, w) -> {
-                        if (w == 0) onCompress();
-                        else if (w == 1) share(item.file);
-                        else showDetails(item);
-                    })
+                    .setItems(labels.toArray(new String[0]), (d, w) -> fActions.get(w).run())
                     .show();
         } else {
-            String[] opts = { getString(R.string.compress), getString(R.string.select_all), getString(R.string.deselect_all) };
+            String[] opts = { getString(R.string.encrypt), getString(R.string.compress),
+                    getString(R.string.select_all), getString(R.string.deselect_all) };
             new MaterialAlertDialogBuilder(this)
                     .setTitle(R.string.more)
                     .setItems(opts, (d, w) -> {
-                        if (w == 0) {
-                            onCompress();
-                        } else {
-                            if (w == 1) { selected.clear(); selected.addAll(files); }
+                        if (w == 0) onEncrypt();
+                        else if (w == 1) onCompress();
+                        else {
+                            if (w == 2) { selected.clear(); selected.addAll(files); }
                             else { selected.clear(); }
                             adapter.setSelected(selected);
                             updateSelectionUi();
@@ -620,6 +710,19 @@ public class FileBrowserActivity extends AppCompatActivity {
     }
 
     private void openFile(File file) {
+        String name = file.getName().toLowerCase();
+        if (isImage(name)) {
+            Intent i = new Intent(this, ImageViewerActivity.class);
+            i.putExtra("path", file.getAbsolutePath());
+            startActivity(i);
+            return;
+        }
+        if (isVideo(name)) {
+            Intent i = new Intent(this, VideoPlayerActivity.class);
+            i.putExtra("path", file.getAbsolutePath());
+            startActivity(i);
+            return;
+        }
         try {
             Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", file);
             Intent i = new Intent(Intent.ACTION_VIEW);
@@ -630,6 +733,16 @@ public class FileBrowserActivity extends AppCompatActivity {
             Toast.makeText(this, getString(R.string.error) + ": " + e.getMessage(),
                     Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private boolean isImage(String name) {
+        return name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png")
+                || name.endsWith(".gif") || name.endsWith(".webp") || name.endsWith(".bmp");
+    }
+
+    private boolean isVideo(String name) {
+        return name.endsWith(".mp4") || name.endsWith(".mkv") || name.endsWith(".webm")
+                || name.endsWith(".avi") || name.endsWith(".mov") || name.endsWith(".3gp");
     }
 
     private void share(File file) {

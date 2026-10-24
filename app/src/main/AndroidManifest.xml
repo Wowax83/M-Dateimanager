@@ -73,6 +73,16 @@
             android:exported="false"
             android:label="@string/network" />
 
+        <activity
+            android:name=".ImageViewerActivity"
+            android:exported="false"
+            android:label="@string/file_browser" />
+
+        <activity
+            android:name=".VideoPlayerActivity"
+            android:exported="false"
+            android:label="@string/file_browser" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

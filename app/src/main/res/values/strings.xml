@@ -104,4 +104,13 @@
     <string name="protocol_sftp">SFTP</string>
     <string name="port">Port</string>
     <string name="ftp_error">Verbindungsfehler</string>
+
+    <!-- Verschlüsselung & Vorschau -->
+    <string name="encrypt">Verschlüsseln</string>
+    <string name="decrypt">Entschlüsseln</string>
+    <string name="password">Passwort</string>
+    <string name="password_required">Passwort erforderlich</string>
+    <string name="encrypt_success">Verschlüsselt:</string>
+    <string name="decrypt_success">Entschlüsselt</string>
+    <string name="decrypt_failed">Falsches Passwort oder beschädigte Datei</string>
 </resources>
