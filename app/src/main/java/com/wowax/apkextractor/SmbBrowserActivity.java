@@ -20,6 +20,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.appcompat.widget.SearchView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -31,6 +32,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -68,6 +70,11 @@ public class SmbBrowserActivity extends AppCompatActivity {
     private final List<SmbItem> moveItems = new ArrayList<>();
     private View moveBar;
     private TextView moveHint;
+
+    private int sortMode = 0; // 0 Name, 1 Größe, 2 Typ
+    private boolean sortAsc = true;
+    private String searchQuery = "";
+    private final List<SmbItem> allItems = new ArrayList<>();
 
     // jcifs-ng wirft gepruefte SmbException -> sichere Hilfsmethoden
     private static String name(SmbFile f) {
@@ -157,13 +164,35 @@ public class SmbBrowserActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_smb_browser, menu);
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        SearchView sv = (SearchView) searchItem.getActionView();
+        if (sv != null) {
+            sv.setQueryHint(getString(R.string.search_files_hint));
+            sv.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                @Override public boolean onQueryTextSubmit(String q) {
+                    searchQuery = q == null ? "" : q.trim();
+                    applyFilterAndSort();
+                    return true;
+                }
+                @Override public boolean onQueryTextChange(String q) {
+                    searchQuery = q == null ? "" : q.trim();
+                    applyFilterAndSort();
+                    return true;
+                }
+            });
+        }
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_new_folder) {
+        int id = item.getItemId();
+        if (id == R.id.action_new_folder) {
             createFolder();
+            return true;
+        }
+        if (id == R.id.action_sort) {
+            showSortDialog();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -246,13 +275,6 @@ public class SmbBrowserActivity extends AppCompatActivity {
         new Thread(() -> {
             try {
                 SmbFile[] children = target.listFiles();
-                List<SmbFile> sorted = new ArrayList<>(Arrays.asList(children));
-                sorted.sort((a, b) -> {
-                    boolean ad = isDir(a);
-                    boolean bd = isDir(b);
-                    if (ad != bd) return ad ? -1 : 1;
-                    return name(a).compareToIgnoreCase(name(b));
-                });
 
                 // Attribut-Abruf (isDir/len/name) komplett im Hintergrund,
                 // da er bei jcifs-ng Netzwerkzugriffe ausloesen kann.
@@ -261,7 +283,7 @@ public class SmbBrowserActivity extends AppCompatActivity {
                 if (!isRoot) {
                     built.add(new SmbItem("..", true, true, 0, null));
                 }
-                for (SmbFile f : sorted) {
+                for (SmbFile f : children) {
                     String n = name(f);
                     if (n.endsWith("/")) n = n.substring(0, n.length() - 1);
                     built.add(new SmbItem(n, isDir(f), false, len(f), f));
@@ -289,12 +311,72 @@ public class SmbBrowserActivity extends AppCompatActivity {
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(currentTitle);
         }
-        items.clear();
-        items.addAll(builtItems);
+        allItems.clear();
+        allItems.addAll(builtItems);
         clearSelection();
+        applyFilterAndSort();
+    }
+
+    private void applyFilterAndSort() {
+        SmbItem parentItem = null;
+        List<SmbItem> list = new ArrayList<>();
+        for (SmbItem it : allItems) {
+            if (it.isParent) { parentItem = it; continue; }
+            if (!searchQuery.isEmpty()
+                    && !it.name.toLowerCase().contains(searchQuery.toLowerCase())) continue;
+            list.add(it);
+        }
+        sortSmb(list);
+        items.clear();
+        if (parentItem != null) items.add(parentItem);
+        items.addAll(list);
         adapter.notifyDataSetChanged();
         emptyView.setVisibility(items.isEmpty() ? View.VISIBLE : View.GONE);
         recycler.setVisibility(items.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
+    private void sortSmb(List<SmbItem> list) {
+        Comparator<SmbItem> cmp;
+        switch (sortMode) {
+            case 1: cmp = Comparator.comparingLong(i -> i.size); break;
+            case 2: cmp = Comparator.comparing(i -> extension(i.name)); break;
+            default: cmp = Comparator.comparing(i -> i.name, String.CASE_INSENSITIVE_ORDER);
+        }
+        list.sort((a, b) -> {
+            if (a.isDirectory != b.isDirectory) return a.isDirectory ? -1 : 1;
+            int c = cmp.compare(a, b);
+            return sortAsc ? c : -c;
+        });
+    }
+
+    private String extension(String name) {
+        int i = name.lastIndexOf('.');
+        return i < 0 ? "" : name.substring(i + 1).toLowerCase(Locale.ROOT);
+    }
+
+    private void showSortDialog() {
+        String[] modes = { getString(R.string.sort_name), getString(R.string.sort_size),
+                getString(R.string.sort_type) };
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.sort)
+                .setSingleChoiceItems(modes, sortMode, (d, which) -> {
+                    sortMode = which;
+                    d.dismiss();
+                    showSortDirectionDialog();
+                })
+                .show();
+    }
+
+    private void showSortDirectionDialog() {
+        String[] dirs = { getString(R.string.sort_asc), getString(R.string.sort_desc) };
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.sort)
+                .setSingleChoiceItems(dirs, sortAsc ? 0 : 1, (d, which) -> {
+                    sortAsc = which == 0;
+                    d.dismiss();
+                    applyFilterAndSort();
+                })
+                .show();
     }
 
     private void refresh() {
