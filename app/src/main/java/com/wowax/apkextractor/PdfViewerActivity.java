@@ -5,8 +5,10 @@ import android.graphics.Color;
 import android.graphics.pdf.PdfRenderer;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
+import android.text.InputType;
 import android.view.Gravity;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -19,6 +21,8 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -30,6 +34,7 @@ public class PdfViewerActivity extends BaseActivity {
     private int pageCount;
     private ViewPager2 pager;
     private TextView pageIndicator;
+    private int currentPage = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +72,7 @@ public class PdfViewerActivity extends BaseActivity {
         pager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
+                currentPage = position;
                 updateIndicator(position);
             }
         });
@@ -106,11 +112,36 @@ public class PdfViewerActivity extends BaseActivity {
         pageIndicator.setTextSize(14);
         pageIndicator.setBackgroundColor(0x99000000);
         pageIndicator.setPadding(dp(12), dp(4), dp(12), dp(4));
+        pageIndicator.setClickable(true);
+        pageIndicator.setOnClickListener(v -> showJumpDialog());
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
         lp.bottomMargin = dp(16);
         root.addView(pageIndicator, lp);
+    }
+
+    private void showJumpDialog() {
+        EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        input.setHint("1 – " + pageCount);
+        input.setText(String.valueOf(currentPage + 1));
+        input.setSelectAllOnFocus(true);
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.pdf_jump_title)
+                .setView(input)
+                .setPositiveButton(R.string.ok, (d, w) -> {
+                    try {
+                        int p = Integer.parseInt(input.getText().toString().trim());
+                        if (p < 1) p = 1;
+                        if (p > pageCount) p = pageCount;
+                        pager.setCurrentItem(p - 1, true);
+                    } catch (NumberFormatException ignored) {
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
     }
 
     private int dp(int v) {
