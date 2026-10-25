@@ -1,5 +1,7 @@
 # M-Dateimanager
 
+> 🔧 [Entwicklungs-Handbuch](DEVELOPMENT.md) — Build, Architektur, Versionshistorie, offene Punkte.
+
 **Schnell · Minimalistisch · Werbefrei** — ein schlanker Dateimanager für Android, ohne Schnickschnack.
 
 Ein ressourcenschonender Dateimanager mit **APK-Extraktor**, **Datei-Explorer** und **Netzwerkzugriff** (SMB / FTP / SFTP). Kostenlos, **ohne Werbung**, **ohne Tracker**, **ohne Datensammlung**. Open Source unter der **MIT-Lizenz**.
