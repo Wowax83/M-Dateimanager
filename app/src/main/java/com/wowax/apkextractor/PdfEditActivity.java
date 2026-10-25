@@ -40,7 +40,7 @@ public class PdfEditActivity extends BaseActivity {
     private float mediaW, mediaH;
     private int origRotation;
     private int rotation;          // aktueller Gesamt-Rotationswert (0/90/180/270)
-    private RectF cropBox;         // Zuschnitt in Medien-Koordinaten (left,bottom,right,top), oder null
+    private PDRectangle cropBox;   // Zuschnitt in Medien-Koordinaten (Punkte, Ursprung unten-links), oder null
 
     private PdfRenderer renderer;
     private ParcelFileDescriptor pfd;
@@ -337,7 +337,7 @@ public class PdfEditActivity extends BaseActivity {
     }
 
     // Angezeigte Punkte (Ursprung oben-links) -> Medien-Koordinaten (Ursprung unten-links).
-    private RectF displayToMedia(RectF d) {
+    private PDRectangle displayToMedia(RectF d) {
         float rx1 = d.left, ry1 = d.top, rx2 = d.right, ry2 = d.bottom;
         float left, bottom, right, top;
         switch (rotation % 360) {
@@ -350,7 +350,7 @@ public class PdfEditActivity extends BaseActivity {
             default:
                 left = rx1; bottom = mediaH - ry2; right = rx2; top = mediaH - ry1; break;
         }
-        return new RectF(left, bottom, right, top);
+        return new PDRectangle(left, bottom, right - left, top - bottom);
     }
 
     private void exitCropMode() {
@@ -369,9 +369,8 @@ public class PdfEditActivity extends BaseActivity {
             try {
                 PDPage page = doc.getPage(pageIndex);
                 page.setRotation(rotation);
-                if (cropBox != null && cropBox.width() > 0 && cropBox.height() > 0) {
-                    page.setCropBox(new PDRectangle(cropBox.left, cropBox.bottom,
-                            cropBox.width(), cropBox.height()));
+                if (cropBox != null && cropBox.getWidth() > 0 && cropBox.getHeight() > 0) {
+                    page.setCropBox(cropBox);
                 }
                 File tmp = new File(file.getParentFile(), file.getName() + ".tmp");
                 doc.save(tmp);
