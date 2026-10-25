@@ -74,12 +74,7 @@
             android:label="@string/network" />
 
         <activity
-            android:name=".ImageViewerActivity"
-            android:exported="false"
-            android:label="@string/file_browser" />
-
-        <activity
-            android:name=".VideoPlayerActivity"
+            android:name=".MediaViewerActivity"
             android:exported="false"
             android:label="@string/file_browser" />
 

@@ -765,16 +765,8 @@ public class FileBrowserActivity extends AppCompatActivity {
 
     private void openFile(File file) {
         String name = file.getName().toLowerCase();
-        if (isImage(name)) {
-            Intent i = new Intent(this, ImageViewerActivity.class);
-            i.putExtra("path", file.getAbsolutePath());
-            startActivity(i);
-            return;
-        }
-        if (isVideo(name)) {
-            Intent i = new Intent(this, VideoPlayerActivity.class);
-            i.putExtra("path", file.getAbsolutePath());
-            startActivity(i);
+        if (isImage(name) || isVideo(name)) {
+            openMedia(file);
             return;
         }
         try {
@@ -787,6 +779,30 @@ public class FileBrowserActivity extends AppCompatActivity {
             Toast.makeText(this, getString(R.string.error) + ": " + e.getMessage(),
                     Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void openMedia(File file) {
+        ArrayList<String> media = new ArrayList<>();
+        int idx = -1;
+        for (FileItem it : files) {
+            if (it.isDirectory) continue;
+            String n = it.name.toLowerCase();
+            if (isImage(n) || isVideo(n)) {
+                media.add(it.file.getAbsolutePath());
+                if (it.file.getAbsolutePath().equals(file.getAbsolutePath())) {
+                    idx = media.size() - 1;
+                }
+            }
+        }
+        if (media.isEmpty()) {
+            media.add(file.getAbsolutePath());
+            idx = 0;
+        }
+        if (idx < 0) idx = 0;
+        Intent i = new Intent(this, MediaViewerActivity.class);
+        i.putStringArrayListExtra("paths", media);
+        i.putExtra("index", idx);
+        startActivity(i);
     }
 
     private boolean isImage(String name) {
