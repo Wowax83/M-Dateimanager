@@ -1,5 +1,6 @@
 package com.wowax.apkextractor;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -37,12 +38,18 @@ public class PdfViewerActivity extends BaseActivity {
     private ViewPager2 pager;
     private TextView pageIndicator;
     private int currentPage = 0;
+    private String path;
+    private ImageButton backButton;
+    private ImageButton editButton;
+    private FrameLayout.LayoutParams backLp;
+    private FrameLayout.LayoutParams editLp;
+    private static final int REQ_EDIT = 7002;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        String path = getIntent().getStringExtra("path");
+        path = getIntent().getStringExtra("path");
         if (path == null) {
             finish();
             return;
@@ -68,7 +75,9 @@ public class PdfViewerActivity extends BaseActivity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         addBackButton(root);
+        addEditButton(root);
         addPageIndicator(root);
+        applyButtonInsets(root);
         setContentView(root);
 
         pager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
@@ -87,23 +96,79 @@ public class PdfViewerActivity extends BaseActivity {
         }
     }
 
+    private void reload() {
+        if (renderer != null) {
+            try { renderer.close(); } catch (Exception ignored) {}
+            renderer = null;
+        }
+        if (pfd != null) {
+            try { pfd.close(); } catch (Exception ignored) {}
+            pfd = null;
+        }
+        try {
+            pfd = ParcelFileDescriptor.open(new File(path), ParcelFileDescriptor.MODE_READ_ONLY);
+            renderer = new PdfRenderer(pfd);
+        } catch (Exception e) {
+            Toast.makeText(this, R.string.error, Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+        pageCount = renderer.getPageCount();
+        if (pager.getAdapter() != null) {
+            pager.getAdapter().notifyDataSetChanged();
+        }
+        updateIndicator(currentPage);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_EDIT && resultCode == RESULT_OK) {
+            reload();
+        }
+    }
+
     private void addBackButton(FrameLayout root) {
-        ImageButton back = new ImageButton(this);
-        back.setImageResource(R.drawable.ic_back);
-        back.setBackgroundResource(R.drawable.bg_back_button);
-        back.setScaleType(ImageView.ScaleType.CENTER);
-        back.setContentDescription(getString(R.string.back));
-        back.setOnClickListener(v -> finish());
+        backButton = new ImageButton(this);
+        backButton.setImageResource(R.drawable.ic_back);
+        backButton.setBackgroundResource(R.drawable.bg_back_button);
+        backButton.setScaleType(ImageView.ScaleType.CENTER);
+        backButton.setContentDescription(getString(R.string.back));
+        backButton.setOnClickListener(v -> finish());
         float d = getResources().getDisplayMetrics().density;
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
-                (int) (40 * d), (int) (40 * d));
-        lp.gravity = Gravity.TOP | Gravity.START;
-        lp.setMargins((int) (8 * d), (int) (8 * d), 0, 0);
-        root.addView(back, lp);
+        backLp = new FrameLayout.LayoutParams((int) (40 * d), (int) (40 * d));
+        backLp.gravity = Gravity.TOP | Gravity.START;
+        backLp.setMargins((int) (8 * d), (int) (8 * d), 0, 0);
+        root.addView(backButton, backLp);
+    }
+
+    private void addEditButton(FrameLayout root) {
+        editButton = new ImageButton(this);
+        editButton.setImageResource(R.drawable.ic_edit);
+        editButton.setBackgroundResource(R.drawable.bg_back_button);
+        editButton.setScaleType(ImageView.ScaleType.CENTER);
+        editButton.setContentDescription(getString(R.string.edit));
+        editButton.setOnClickListener(v -> {
+            Intent i = new Intent(this, PdfEditActivity.class);
+            i.putExtra("path", path);
+            i.putExtra("page", currentPage);
+            startActivityForResult(i, REQ_EDIT);
+        });
+        float d = getResources().getDisplayMetrics().density;
+        editLp = new FrameLayout.LayoutParams((int) (40 * d), (int) (40 * d));
+        editLp.gravity = Gravity.TOP | Gravity.END;
+        editLp.setMargins(0, (int) (8 * d), (int) (8 * d), 0);
+        root.addView(editButton, editLp);
+    }
+
+    private void applyButtonInsets(FrameLayout root) {
         ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            lp.setMargins((int) (8 * d), bars.top + (int) (8 * d), 0, 0);
-            back.setLayoutParams(lp);
+            float d = getResources().getDisplayMetrics().density;
+            backLp.setMargins((int) (8 * d), bars.top + (int) (8 * d), 0, 0);
+            backButton.setLayoutParams(backLp);
+            editLp.setMargins(0, bars.top + (int) (8 * d), (int) (8 * d), 0);
+            editButton.setLayoutParams(editLp);
             return insets;
         });
     }
