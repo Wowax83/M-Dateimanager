@@ -88,6 +88,11 @@
             android:exported="false"
             android:label="@string/file_browser" />
 
+        <activity
+            android:name=".ImageEditActivity"
+            android:exported="false"
+            android:label="@string/edit" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

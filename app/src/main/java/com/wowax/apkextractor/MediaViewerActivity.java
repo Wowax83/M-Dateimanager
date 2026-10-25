@@ -1,11 +1,13 @@
 package com.wowax.apkextractor;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
@@ -31,6 +33,12 @@ public class MediaViewerActivity extends BaseActivity {
     private int index = 0;
     private ViewPager2 pager;
 
+    private static final int REQ_EDIT = 7001;
+    private ImageButton backButton;
+    private ImageButton editButton;
+    private FrameLayout.LayoutParams backLp;
+    private FrameLayout.LayoutParams editLp;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,36 +61,77 @@ public class MediaViewerActivity extends BaseActivity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         addBackButton(root);
+        addEditButton(root);
+        applyButtonInsets(root);
         setContentView(root);
 
         pager.setCurrentItem(index, false);
+        updateEditButton();
         pager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
                 index = position;
+                updateEditButton();
             }
         });
     }
 
     private void addBackButton(FrameLayout root) {
-        ImageButton back = new ImageButton(this);
-        back.setImageResource(R.drawable.ic_back);
-        back.setBackgroundResource(R.drawable.bg_back_button);
-        back.setScaleType(ImageView.ScaleType.CENTER);
-        back.setContentDescription(getString(R.string.back));
-        back.setOnClickListener(v -> finish());
+        backButton = new ImageButton(this);
+        backButton.setImageResource(R.drawable.ic_back);
+        backButton.setBackgroundResource(R.drawable.bg_back_button);
+        backButton.setScaleType(ImageView.ScaleType.CENTER);
+        backButton.setContentDescription(getString(R.string.back));
+        backButton.setOnClickListener(v -> finish());
         float d = getResources().getDisplayMetrics().density;
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
-                (int) (40 * d), (int) (40 * d));
-        lp.gravity = Gravity.TOP | Gravity.START;
-        lp.setMargins((int) (8 * d), (int) (8 * d), 0, 0);
-        root.addView(back, lp);
+        backLp = new FrameLayout.LayoutParams((int) (40 * d), (int) (40 * d));
+        backLp.gravity = Gravity.TOP | Gravity.START;
+        backLp.setMargins((int) (8 * d), (int) (8 * d), 0, 0);
+        root.addView(backButton, backLp);
+    }
+
+    private void addEditButton(FrameLayout root) {
+        editButton = new ImageButton(this);
+        editButton.setImageResource(R.drawable.ic_edit);
+        editButton.setBackgroundResource(R.drawable.bg_back_button);
+        editButton.setScaleType(ImageView.ScaleType.CENTER);
+        editButton.setContentDescription(getString(R.string.edit));
+        editButton.setOnClickListener(v -> {
+            Intent i = new Intent(this, ImageEditActivity.class);
+            i.putExtra("path", paths.get(index));
+            startActivityForResult(i, REQ_EDIT);
+        });
+        float d = getResources().getDisplayMetrics().density;
+        editLp = new FrameLayout.LayoutParams((int) (40 * d), (int) (40 * d));
+        editLp.gravity = Gravity.TOP | Gravity.END;
+        editLp.setMargins(0, (int) (8 * d), (int) (8 * d), 0);
+        root.addView(editButton, editLp);
+    }
+
+    private void applyButtonInsets(FrameLayout root) {
         ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            lp.setMargins((int) (8 * d), bars.top + (int) (8 * d), 0, 0);
-            back.setLayoutParams(lp);
+            float d = getResources().getDisplayMetrics().density;
+            backLp.setMargins((int) (8 * d), bars.top + (int) (8 * d), 0, 0);
+            backButton.setLayoutParams(backLp);
+            editLp.setMargins(0, bars.top + (int) (8 * d), (int) (8 * d), 0);
+            editButton.setLayoutParams(editLp);
             return insets;
         });
+    }
+
+    private void updateEditButton() {
+        if (editButton != null && index >= 0 && index < paths.size()) {
+            editButton.setVisibility(!isVideo(paths.get(index)) ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_EDIT && resultCode == RESULT_OK && pager.getAdapter() != null) {
+            pager.getAdapter().notifyItemChanged(index);
+        }
     }
 
     private boolean isVideo(String name) {
