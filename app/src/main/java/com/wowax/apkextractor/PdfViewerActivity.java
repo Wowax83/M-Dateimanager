@@ -2,6 +2,8 @@ package com.wowax.apkextractor;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.graphics.pdf.PdfRenderer;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
@@ -109,9 +111,13 @@ public class PdfViewerActivity extends BaseActivity {
     private void addPageIndicator(FrameLayout root) {
         pageIndicator = new TextView(this);
         pageIndicator.setTextColor(Color.WHITE);
-        pageIndicator.setTextSize(14);
-        pageIndicator.setBackgroundColor(0x99000000);
-        pageIndicator.setPadding(dp(12), dp(4), dp(12), dp(4));
+        pageIndicator.setTextSize(18);
+        pageIndicator.setTypeface(null, Typeface.BOLD);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(0xAA000000);
+        bg.setCornerRadius(dp(20));
+        pageIndicator.setBackground(bg);
+        pageIndicator.setPadding(dp(20), dp(8), dp(20), dp(8));
         pageIndicator.setClickable(true);
         pageIndicator.setOnClickListener(v -> showJumpDialog());
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
