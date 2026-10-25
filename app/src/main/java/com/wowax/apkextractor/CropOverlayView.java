@@ -19,17 +19,19 @@ public class CropOverlayView extends View {
     private RectF crop = new RectF();
 
     private final float handleRadius;
+    private final float touchRadius;
     private int dragging = -1; // -1 keine, 0..3 Ecken, 4 verschieben
     private float lastX, lastY;
 
     public CropOverlayView(Context context) {
         super(context);
         float d = getResources().getDisplayMetrics().density;
-        handleRadius = 9f * d;
+        handleRadius = 15f * d;
+        touchRadius = 34f * d;
         dimPaint.setColor(0x99000000);
         borderPaint.setColor(Color.WHITE);
         borderPaint.setStyle(Paint.Style.STROKE);
-        borderPaint.setStrokeWidth(2f * d);
+        borderPaint.setStrokeWidth(3f * d);
         handlePaint.setColor(Color.WHITE);
     }
 
@@ -93,7 +95,7 @@ public class CropOverlayView extends View {
     }
 
     private int hitTest(float x, float y) {
-        float d = handleRadius * 2f;
+        float d = touchRadius;
         if (near(x, y, crop.left, crop.top, d)) return 0;
         if (near(x, y, crop.right, crop.top, d)) return 1;
         if (near(x, y, crop.left, crop.bottom, d)) return 2;

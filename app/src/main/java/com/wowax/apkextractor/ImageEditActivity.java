@@ -107,24 +107,29 @@ public class ImageEditActivity extends BaseActivity {
 
     private void buildBottomBar(FrameLayout root) {
         bottomBar = new LinearLayout(this);
-        bottomBar.setOrientation(LinearLayout.HORIZONTAL);
-        bottomBar.setGravity(Gravity.CENTER);
-        bottomBar.setPadding(dp(8), dp(8), dp(8), dp(8));
+        bottomBar.setOrientation(LinearLayout.VERTICAL);
+        bottomBar.setPadding(dp(8), dp(6), dp(8), dp(6));
 
-        btnRotateLeft = makeButton("↺");
-        btnRotateRight = makeButton("↻");
-        btnCrop = makeButton("Zuschneiden");
-        btnSave = makeButton("Speichern");
-
+        LinearLayout row1 = new LinearLayout(this);
+        row1.setOrientation(LinearLayout.HORIZONTAL);
+        btnRotateLeft = makeButton("↺ Links");
+        btnRotateRight = makeButton("↻ Rechts");
         btnRotateLeft.setOnClickListener(v -> rotate(-90));
         btnRotateRight.setOnClickListener(v -> rotate(90));
+        row1.addView(btnRotateLeft, halfLp());
+        row1.addView(btnRotateRight, halfLp());
+
+        LinearLayout row2 = new LinearLayout(this);
+        row2.setOrientation(LinearLayout.HORIZONTAL);
+        btnCrop = makeButton("Zuschneiden");
+        btnSave = makeButton("Speichern");
         btnCrop.setOnClickListener(v -> toggleCrop());
         btnSave.setOnClickListener(v -> save());
+        row2.addView(btnCrop, halfLp());
+        row2.addView(btnSave, halfLp());
 
-        bottomBar.addView(btnRotateLeft, buttonLp());
-        bottomBar.addView(btnRotateRight, buttonLp());
-        bottomBar.addView(btnCrop, buttonLp());
-        bottomBar.addView(btnSave, buttonLp());
+        bottomBar.addView(row1);
+        bottomBar.addView(row2);
 
         FrameLayout.LayoutParams blp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -132,10 +137,10 @@ public class ImageEditActivity extends BaseActivity {
         root.addView(bottomBar, blp);
     }
 
-    private LinearLayout.LayoutParams buttonLp() {
+    private LinearLayout.LayoutParams halfLp() {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.setMargins(dp(4), 0, dp(4), 0);
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        lp.setMargins(dp(4), dp(4), dp(4), dp(4));
         return lp;
     }
 
@@ -143,11 +148,12 @@ public class ImageEditActivity extends BaseActivity {
         TextView t = new TextView(this);
         t.setText(label);
         t.setTextColor(Color.WHITE);
-        t.setTextSize(15);
-        t.setPadding(dp(18), dp(10), dp(18), dp(10));
+        t.setTextSize(17);
+        t.setGravity(Gravity.CENTER);
+        t.setPadding(dp(12), dp(14), dp(12), dp(14));
         GradientDrawable g = new GradientDrawable();
         g.setColor(0x88000000);
-        g.setCornerRadius(dp(20));
+        g.setCornerRadius(dp(12));
         t.setBackground(g);
         t.setClickable(true);
         return t;
