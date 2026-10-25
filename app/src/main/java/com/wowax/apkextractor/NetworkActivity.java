@@ -25,7 +25,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NetworkActivity extends AppCompatActivity {
+public class NetworkActivity extends BaseActivity {
 
     private final List<SmbServer> servers = new ArrayList<>();
     private ServerAdapter adapter;

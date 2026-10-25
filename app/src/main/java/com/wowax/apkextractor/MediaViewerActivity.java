@@ -25,7 +25,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 /** Einheitliche Media-Vorschau: per Swipe zwischen Bildern und Videos blättern. */
-public class MediaViewerActivity extends AppCompatActivity {
+public class MediaViewerActivity extends BaseActivity {
 
     private ArrayList<String> paths = new ArrayList<>();
     private int index = 0;

@@ -33,7 +33,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="15sp"
-            android:textColor="#212121"
+            android:textColor="@color/text_primary"
             android:maxLines="1"
             android:ellipsize="middle" />
 

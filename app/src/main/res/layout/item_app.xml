@@ -26,7 +26,7 @@
             android:layout_height="wrap_content"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="#212121"
+            android:textColor="@color/text_primary"
             android:maxLines="1"
             android:ellipsize="end" />
 

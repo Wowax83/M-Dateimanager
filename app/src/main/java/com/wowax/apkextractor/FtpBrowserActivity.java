@@ -45,7 +45,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
-public class FtpBrowserActivity extends AppCompatActivity {
+public class FtpBrowserActivity extends BaseActivity {
 
     private final Handler main = new Handler(Looper.getMainLooper());
 

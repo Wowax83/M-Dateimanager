@@ -44,7 +44,7 @@ import jcifs.CIFSContext;
 import jcifs.smb.NtlmPasswordAuthenticator;
 import jcifs.smb.SmbFile;
 
-public class SmbBrowserActivity extends AppCompatActivity {
+public class SmbBrowserActivity extends BaseActivity {
 
     private final Handler main = new Handler(Looper.getMainLooper());
 

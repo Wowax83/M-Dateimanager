@@ -50,7 +50,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-public class FileBrowserActivity extends AppCompatActivity {
+public class FileBrowserActivity extends BaseActivity {
 
     private static final int REQ_READ = 2001;
 

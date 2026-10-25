@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.Locale;
 
-public class DashboardActivity extends AppCompatActivity {
+public class DashboardActivity extends BaseActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,6 +27,9 @@ public class DashboardActivity extends AppCompatActivity {
 
         findViewById(R.id.card_network).setOnClickListener(v ->
                 startActivity(new Intent(this, NetworkActivity.class)));
+
+        findViewById(R.id.btn_settings).setOnClickListener(v ->
+                startActivity(new Intent(this, SettingsActivity.class)));
 
         loadStorageInfo();
     }
