@@ -769,6 +769,12 @@ public class FileBrowserActivity extends BaseActivity {
             openMedia(file);
             return;
         }
+        if (isPdf(name)) {
+            Intent i = new Intent(this, PdfViewerActivity.class);
+            i.putExtra("path", file.getAbsolutePath());
+            startActivity(i);
+            return;
+        }
         try {
             Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", file);
             Intent i = new Intent(Intent.ACTION_VIEW);
@@ -803,6 +809,10 @@ public class FileBrowserActivity extends BaseActivity {
         i.putStringArrayListExtra("paths", media);
         i.putExtra("index", idx);
         startActivity(i);
+    }
+
+    private boolean isPdf(String name) {
+        return name.endsWith(".pdf");
     }
 
     private boolean isImage(String name) {
