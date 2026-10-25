@@ -13,6 +13,14 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatImageView;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import android.view.Gravity;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 
 public class ImageViewerActivity extends AppCompatActivity {
 
@@ -31,7 +39,34 @@ public class ImageViewerActivity extends AppCompatActivity {
             return;
         }
         view.setImageBitmap(bmp);
-        setContentView(view);
+
+        FrameLayout root = new FrameLayout(this);
+        root.setBackgroundColor(0xFF000000);
+        root.addView(view, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        addBackButton(root);
+        setContentView(root);
+    }
+
+    private void addBackButton(FrameLayout root) {
+        ImageButton back = new ImageButton(this);
+        back.setImageResource(R.drawable.ic_back);
+        back.setBackgroundResource(R.drawable.bg_back_button);
+        back.setScaleType(ImageView.ScaleType.CENTER);
+        back.setContentDescription(getString(R.string.back));
+        back.setOnClickListener(v -> finish());
+        float d = getResources().getDisplayMetrics().density;
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                (int) (40 * d), (int) (40 * d));
+        lp.gravity = Gravity.TOP | Gravity.START;
+        lp.setMargins((int) (8 * d), (int) (8 * d), 0, 0);
+        root.addView(back, lp);
+        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            lp.setMargins((int) (8 * d), bars.top + (int) (8 * d), 0, 0);
+            back.setLayoutParams(lp);
+            return insets;
+        });
     }
 
     private Bitmap decodeSampled(String path, int maxDim) {

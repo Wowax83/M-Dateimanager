@@ -74,6 +74,7 @@
     <string name="move_here">Hierhin verschieben</string>
     <string name="cancel">Abbrechen</string>
     <string name="close">Schließen</string>
+    <string name="back">Zurück</string>
     <string name="server_unreachable">Server nicht erreichbar</string>
     <string name="move_hint">Zielordner wählen – dann „Hierhin verschieben"</string>
 
