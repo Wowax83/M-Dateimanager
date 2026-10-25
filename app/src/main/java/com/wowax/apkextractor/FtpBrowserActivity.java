@@ -22,6 +22,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.content.res.AppCompatResources;
+import me.zhanghai.android.fastscroll.FastScrollerBuilder;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.jcraft.jsch.Channel;
@@ -95,6 +97,10 @@ public class FtpBrowserActivity extends AppCompatActivity {
         moveHint = findViewById(R.id.move_hint);
 
         recycler.setLayoutManager(new LinearLayoutManager(this));
+        new FastScrollerBuilder(recycler)
+                .setThumbDrawable(AppCompatResources.getDrawable(this, R.drawable.fastscroll_thumb))
+                .setTrackDrawable(AppCompatResources.getDrawable(this, R.drawable.fastscroll_track))
+                .build();
         adapter = new FtpListAdapter(items, new FtpListAdapter.Listener() {
             @Override
             public void onClick(FtpItem item) {

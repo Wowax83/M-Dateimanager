@@ -28,6 +28,8 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.content.res.AppCompatResources;
+import me.zhanghai.android.fastscroll.FastScrollerBuilder;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -101,6 +103,10 @@ public class FileBrowserActivity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(v -> goUpOrFinish());
 
         recycler.setLayoutManager(new LinearLayoutManager(this));
+        new FastScrollerBuilder(recycler)
+                .setThumbDrawable(AppCompatResources.getDrawable(this, R.drawable.fastscroll_thumb))
+                .setTrackDrawable(AppCompatResources.getDrawable(this, R.drawable.fastscroll_track))
+                .build();
         adapter = new FileListAdapter(files, new FileListAdapter.Listener() {
             @Override public void onClick(FileItem item) { onItemClick(item); }
             @Override public boolean onLongClick(FileItem item) { onToggleSelection(item); return true; }

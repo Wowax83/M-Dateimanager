@@ -23,6 +23,8 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.appcompat.widget.SearchView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.content.res.AppCompatResources;
+import me.zhanghai.android.fastscroll.FastScrollerBuilder;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -118,6 +120,10 @@ public class SmbBrowserActivity extends AppCompatActivity {
         moveHint = findViewById(R.id.move_hint);
 
         recycler.setLayoutManager(new LinearLayoutManager(this));
+        new FastScrollerBuilder(recycler)
+                .setThumbDrawable(AppCompatResources.getDrawable(this, R.drawable.fastscroll_thumb))
+                .setTrackDrawable(AppCompatResources.getDrawable(this, R.drawable.fastscroll_track))
+                .build();
         adapter = new SmbListAdapter(items, new SmbListAdapter.Listener() {
             @Override
             public void onClick(SmbItem item) {
